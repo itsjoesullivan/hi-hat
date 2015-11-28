@@ -1,4 +1,5 @@
-module.exports = function(context) {
+var currentlyPlayingNodes = [];
+module.exports = function(context, open) {
   var audioNode = context.createGain();
 
   var fundamental = 40;
@@ -32,18 +33,31 @@ module.exports = function(context) {
   });
 
   audioNode.start = function(when) {
+    currentlyPlayingNodes.forEach(function(node) {
+      node.stop(when + 0.1);
+    });
+    currentlyPlayingNodes = [];
+    currentlyPlayingNodes.push(audioNode);
     if (typeof when !== "number") {
       when = context.currentTime;
     }
     oscs.forEach(function(osc) {
       osc.start(when);
-      osc.stop(when + 0.3);
+      if (open) {
+        osc.stop(when + 1.3);
+      } else {
+        osc.stop(when + 0.3);
+      }
     });
     // Define the volume envelope
     gain.gain.setValueAtTime(0.00001, when);
     gain.gain.exponentialRampToValueAtTime(1, when + 0.02);
     gain.gain.exponentialRampToValueAtTime(0.3, when + 0.03);
-    gain.gain.exponentialRampToValueAtTime(0.00001, when + 0.3);
+    if (open) {
+      gain.gain.exponentialRampToValueAtTime(0.00001, when + 1.3);
+    } else {
+      gain.gain.exponentialRampToValueAtTime(0.00001, when + 0.3);
+    }
   };
   audioNode.stop = function(when) {
     oscs.forEach(function(osc) {

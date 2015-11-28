@@ -1,5 +1,6 @@
 (function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
-module.exports = function(context) {
+var currentlyPlayingNodes = [];
+module.exports = function(context, open) {
   var audioNode = context.createGain();
 
   var fundamental = 40;
@@ -33,18 +34,31 @@ module.exports = function(context) {
   });
 
   audioNode.start = function(when) {
+    currentlyPlayingNodes.forEach(function(node) {
+      node.stop(when + 0.1);
+    });
+    currentlyPlayingNodes = [];
+    currentlyPlayingNodes.push(audioNode);
     if (typeof when !== "number") {
       when = context.currentTime;
     }
     oscs.forEach(function(osc) {
       osc.start(when);
-      osc.stop(when + 0.3);
+      if (open) {
+        osc.stop(when + 1.3);
+      } else {
+        osc.stop(when + 0.3);
+      }
     });
     // Define the volume envelope
     gain.gain.setValueAtTime(0.00001, when);
     gain.gain.exponentialRampToValueAtTime(1, when + 0.02);
     gain.gain.exponentialRampToValueAtTime(0.3, when + 0.03);
-    gain.gain.exponentialRampToValueAtTime(0.00001, when + 0.3);
+    if (open) {
+      gain.gain.exponentialRampToValueAtTime(0.00001, when + 1.3);
+    } else {
+      gain.gain.exponentialRampToValueAtTime(0.00001, when + 0.3);
+    }
   };
   audioNode.stop = function(when) {
     oscs.forEach(function(osc) {
@@ -57,8 +71,14 @@ module.exports = function(context) {
 },{}],2:[function(require,module,exports){
 var context = new AudioContext();
 var hihat = require('./index');
-document.getElementById('hat').addEventListener('click', function(e) {
+document.getElementById('closed-hat').addEventListener('click', function(e) {
   var hat = hihat(context);
+  hat.connect(context.destination);
+  hat.start(context.currentTime);
+});
+
+document.getElementById('open-hat').addEventListener('click', function(e) {
+  var hat = hihat(context, true);
   hat.connect(context.destination);
   hat.start(context.currentTime);
 });
