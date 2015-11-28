@@ -28,6 +28,7 @@ module.exports = function(context) {
     // Frequency is the fundamental * this oscillator's ratio
     osc.frequency.value = fundamental * ratio;
     osc.connect(bandpass);
+    return osc;
   });
 
   audioNode.start = function(when) {
@@ -45,6 +46,9 @@ module.exports = function(context) {
     gain.gain.exponentialRampToValueAtTime(0.00001, when + 0.3);
   };
   audioNode.stop = function(when) {
+    oscs.forEach(function(osc) {
+      osc.stop(when);
+    });
   };
   return audioNode;
 };
