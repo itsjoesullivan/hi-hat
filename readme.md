@@ -3,17 +3,21 @@
 `npm install --save-dev hi-hat`
 
 ```javascript
-var hat = require('hi-hat');
+var HiHat = require('hi-hat');
 
 // Initialize AudioContext
 var context = new AudioContext();
 
+// Initialize instrument
+var hat = HiHat(context);
+
 // Create hat audio node (one time use only)
-var hatNode = hat(context);
+var closedHatNode = hat(); // Closed hat
+var openHatNode = hat(true); // Open hat
 
 // Connect to target node
-hatNode.connect(context.destination);
+closedHatNode.connect(context.destination);
 
 // Start
-hatNode.start(context.currentTime);
+closedHatNode.start(context.currentTime);
 ```

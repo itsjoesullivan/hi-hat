@@ -1,68 +1,71 @@
-var currentlyPlayingNodes = [];
-module.exports = function(context, open) {
-  var audioNode = context.createGain();
+module.exports = function(context) {
+  var currentlyPlayingNodes = [];
 
-  var fundamental = 40;
-  var ratios = [2, 3, 4.16, 5.43, 6.79, 8.21];
+  return function(open) {
+    var audioNode = context.createGain();
 
-  var gain = context.createGain();
+    var fundamental = 40;
+    var ratios = [2, 3, 4.16, 5.43, 6.79, 8.21];
 
-  // Bandpass
-  var bandpass = context.createBiquadFilter();
-  bandpass.type = "bandpass";
-  bandpass.frequency.value = 10000;
+    var gain = context.createGain();
 
-  // Highpass
-  var highpass = context.createBiquadFilter();
-  highpass.type = "highpass";
-  highpass.frequency.value = 7000;
+    // Bandpass
+    var bandpass = context.createBiquadFilter();
+    bandpass.type = "bandpass";
+    bandpass.frequency.value = 10000;
 
-  // Connect the graph
-  bandpass.connect(highpass);
-  highpass.connect(gain);
-  gain.connect(audioNode);
+    // Highpass
+    var highpass = context.createBiquadFilter();
+    highpass.type = "highpass";
+    highpass.frequency.value = 7000;
 
-  // Create the oscillators
-  var oscs = ratios.map(function(ratio) {
-    var osc = context.createOscillator();
-    osc.type = "square";
-    // Frequency is the fundamental * this oscillator's ratio
-    osc.frequency.value = fundamental * ratio;
-    osc.connect(bandpass);
-    return osc;
-  });
+    // Connect the graph
+    bandpass.connect(highpass);
+    highpass.connect(gain);
+    gain.connect(audioNode);
 
-  audioNode.start = function(when) {
-    currentlyPlayingNodes.forEach(function(node) {
-      node.stop(when + 0.1);
+    // Create the oscillators
+    var oscs = ratios.map(function(ratio) {
+      var osc = context.createOscillator();
+      osc.type = "square";
+      // Frequency is the fundamental * this oscillator's ratio
+      osc.frequency.value = fundamental * ratio;
+      osc.connect(bandpass);
+      return osc;
     });
-    currentlyPlayingNodes = [];
-    currentlyPlayingNodes.push(audioNode);
-    if (typeof when !== "number") {
-      when = context.currentTime;
-    }
-    oscs.forEach(function(osc) {
-      osc.start(when);
-      if (open) {
-        osc.stop(when + 1.3);
-      } else {
-        osc.stop(when + 0.3);
+
+    audioNode.start = function(when) {
+      currentlyPlayingNodes.forEach(function(node) {
+        node.stop(when + 0.1);
+      });
+      currentlyPlayingNodes = [];
+      currentlyPlayingNodes.push(audioNode);
+      if (typeof when !== "number") {
+        when = context.currentTime;
       }
-    });
-    // Define the volume envelope
-    gain.gain.setValueAtTime(0.00001, when);
-    gain.gain.exponentialRampToValueAtTime(1, when + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.3, when + 0.03);
-    if (open) {
-      gain.gain.exponentialRampToValueAtTime(0.00001, when + 1.3);
-    } else {
-      gain.gain.exponentialRampToValueAtTime(0.00001, when + 0.3);
-    }
+      oscs.forEach(function(osc) {
+        osc.start(when);
+        if (open) {
+          osc.stop(when + 1.3);
+        } else {
+          osc.stop(when + 0.3);
+        }
+      });
+      // Define the volume envelope
+      gain.gain.setValueAtTime(0.00001, when);
+      gain.gain.exponentialRampToValueAtTime(1, when + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.3, when + 0.03);
+      if (open) {
+        gain.gain.exponentialRampToValueAtTime(0.00001, when + 1.3);
+      } else {
+        gain.gain.exponentialRampToValueAtTime(0.00001, when + 0.3);
+      }
+    };
+    audioNode.stop = function(when) {
+      oscs.forEach(function(osc) {
+        osc.stop(when);
+      });
+    };
+    return audioNode;
   };
-  audioNode.stop = function(when) {
-    oscs.forEach(function(osc) {
-      osc.stop(when);
-    });
-  };
-  return audioNode;
 };
