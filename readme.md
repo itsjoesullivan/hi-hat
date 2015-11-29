@@ -1,6 +1,6 @@
 ##Usage
 
-`npm install --save-dev hi-hat`
+`npm install --save hi-hat`
 
 ```javascript
 var HiHat = require('hi-hat');
