@@ -1,28 +1,33 @@
 module.exports = function(context) {
   var currentlyPlayingNodes = [];
 
+  var fundamental = 40;
+  var ratios = [2, 3, 4.16, 5.43, 6.79, 8.21];
+
+
+  // Highpass
+  var highpass = context.createBiquadFilter();
+  highpass.type = "highpass";
+  highpass.frequency.value = 7000;
+
+  // Bandpass
+  var bandpass = context.createBiquadFilter();
+  bandpass.type = "bandpass";
+  bandpass.frequency.value = 10000;
+  bandpass.connect(highpass);
+
+
   return function(open) {
     var audioNode = context.createGain();
 
-    var fundamental = 40;
-    var ratios = [2, 3, 4.16, 5.43, 6.79, 8.21];
 
     var gain = context.createGain();
+    gain.gain.value = 0;
 
-    // Bandpass
-    var bandpass = context.createBiquadFilter();
-    bandpass.type = "bandpass";
-    bandpass.frequency.value = 10000;
 
-    // Highpass
-    var highpass = context.createBiquadFilter();
-    highpass.type = "highpass";
-    highpass.frequency.value = 7000;
+    gain.connect(bandpass);
+    highpass.connect(audioNode);
 
-    // Connect the graph
-    bandpass.connect(highpass);
-    highpass.connect(gain);
-    gain.connect(audioNode);
 
     // Create the oscillators
     var oscs = ratios.map(function(ratio) {
@@ -30,7 +35,7 @@ module.exports = function(context) {
       osc.type = "square";
       // Frequency is the fundamental * this oscillator's ratio
       osc.frequency.value = fundamental * ratio;
-      osc.connect(bandpass);
+      osc.connect(gain);
       return osc;
     });
 
@@ -46,9 +51,9 @@ module.exports = function(context) {
       oscs.forEach(function(osc) {
         osc.start(when);
         if (open) {
-          osc.stop(when + 1.3);
+          osc.stop(when + 1.31);
         } else {
-          osc.stop(when + 0.3);
+          osc.stop(when + 0.31);
         }
       });
       // Define the volume envelope
@@ -57,8 +62,10 @@ module.exports = function(context) {
       gain.gain.exponentialRampToValueAtTime(0.3, when + 0.03);
       if (open) {
         gain.gain.exponentialRampToValueAtTime(0.00001, when + 1.3);
+        gain.gain.setValueAtTime(0, when + 1.31);
       } else {
         gain.gain.exponentialRampToValueAtTime(0.00001, when + 0.3);
+        gain.gain.setValueAtTime(0, when + 0.31);
       }
     };
     audioNode.stop = function(when) {
