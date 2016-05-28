@@ -1,6 +1,6 @@
 {
   "name": "hi-hat",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "A web audio module for synthesizing hi-hats",
   "main": "index.js",
   "scripts": {
