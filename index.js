@@ -26,6 +26,9 @@ module.exports = function(context) {
     var postChoke = context.createGain();
     postChoke.gain.value = 0;
 
+    var volume = context.createGain();
+    volume.gain.value = 0.4;
+
 
     if (open) {
       audioNode.duration = 1.3;
@@ -40,7 +43,8 @@ module.exports = function(context) {
 
     gainNode.connect(bandpass);
     highpass.connect(postChoke);
-    postChoke.connect(audioNode);
+    postChoke.connect(volume);
+    volume.connect(audioNode);
 
 
     // Create the oscillators
